@@ -12,7 +12,7 @@ import { useEffect, useRef } from 'react'
 export default function Home() {
 
   const { messages, input, handleSubmit, handleInputChange, status } = useChat({
-    api: `http://localhost:8000/ask`,
+    api: `${process.env.NEXT_PUBLIC_API_URL}/ask`,
     streamProtocol: 'text',
   });
 
