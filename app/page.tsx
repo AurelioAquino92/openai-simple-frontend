@@ -1,42 +1,17 @@
 'use client'
 
+import { useChat } from "@ai-sdk/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
 import { ArrowUpIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getAIResponse, type Message } from "./actions"
-
 
 export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
-
-    const newUserMessage: Message = {
-      role: 'user',
-      content: input
-    }
-
-    setMessages(prev => [...prev, newUserMessage])
-    setInput("")
-
-    try {
-      const newAIResponseData = await getAIResponse([newUserMessage])
-      
-      setMessages(prev => [...prev, newAIResponseData])
-    } catch (error) {
-      console.error('Error:', error)
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: "Sorry, I couldn't connect to the server. Please try again later.",
-        error: error instanceof Error ? error.message : 'Unknown error'
-      }])
-    }
-  }
+  const { messages, input, handleSubmit, handleInputChange, status } = useChat({
+    api: `http://localhost:8000/ask`,
+    streamProtocol: 'text',
+  });
 
   return (
     <div className="flex flex-col h-screen bg-white max-w-3xl mx-auto p-4">
@@ -54,7 +29,7 @@ export default function Home() {
                 }`
               }
             >
-              {message.content}
+              {typeof message.content === 'string' ? message.content : ''}
             </div>
           </div>
         ))}
@@ -63,14 +38,15 @@ export default function Home() {
       <form onSubmit={handleSubmit} className="flex gap-2 p-5 bg-stone-100 rounded-lg">
         <Input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleInputChange}
           placeholder="Ask me anything..."
           className="flex-1 border-none outline-none shadow-none p-4"
+          disabled={status !== 'ready'}
         />
         <Button
           className={cn("bg-white text-black rounded-full", input.length > 0 ? "opacity-100" : "opacity-50")}
           type="submit"
-          disabled={input.length === 0}
+          disabled={input.length === 0 || status !== 'ready'}
         >
           <ArrowUpIcon className="w-4 h-4" />
         </Button>
