@@ -1,3 +1,7 @@
+# OpenAI Simple Frontend
+
+[![My Deployed Version](https://img.shields.io/badge/My%20Deployed%20Version-OpenAI%20Simple%20Frontend-blue)](https://openai-simple-frontend.vercel.app/)
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
