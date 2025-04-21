@@ -25,7 +25,7 @@ export function ChatClient({ initialChats }: ChatClientProps) {
   const [chatId, setChatId] = useState<number | null>(null)
   const [chats, setChats] = useState(initialChats)
   const [messages, setMessages] = useState<Message[]>([])
-  
+
   const { input, handleSubmit, handleInputChange, status } = useChat({
     api: `${process.env.NEXT_PUBLIC_API_URL}/ask`,
     streamProtocol: 'text',
@@ -34,16 +34,17 @@ export function ChatClient({ initialChats }: ChatClientProps) {
       const newChatId = await createUserMessage(input, user.id, chatId);
       await createAssistantMessage(message.content, newChatId)
       setChatId(newChatId);
-      
+
       const updatedChats = await getUserChats(user.id);
       setChats(updatedChats);
-      
+
       const updatedMessages = await getChatMessages(newChatId);
       setMessages(updatedMessages);
     },
   });
 
   const handleChatSelect = async (selectedChatId: number) => {
+    setMessages([]);
     setChatId(selectedChatId);
     const messages = await getChatMessages(selectedChatId);
     setMessages(messages);
@@ -75,16 +76,19 @@ export function ChatClient({ initialChats }: ChatClientProps) {
           <PlusIcon className="w-4 h-4" />
           New Chat
         </Button>
-        <div className="mt-5 flex flex-col gap-2 items-center w-full overflow-y-auto max-h-[calc(100vh-300px)]">
+        <div className="mt-5 flex flex-col w-full overflow-y-auto max-h-[calc(100vh-300px)]">
           {chats.map((chat) => (
-            <Button
+            <div
               key={chat.id}
-              className="border border-stone-200 w-full overflow-hidden p-1 rounded-lg"
+              className={`flex overflow-hidden p-2 rounded-lg cursor-pointer select-none hover:bg-stone-100 ${chat.id === chatId ? "bg-stone-200" : ""}`}
               onClick={() => handleChatSelect(chat.id)}
-              variant={chat.id === chatId ? "secondary" : "outline"}
             >
-              <span className="truncate">{chat.messages[0].content}</span>
-            </Button>
+              <span
+                className="truncate"
+              >
+                {chat.messages[0].content}
+              </span>
+            </div>
           ))}
         </div>
       </div>
