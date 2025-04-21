@@ -1,10 +1,8 @@
 import ReactMarkdown from 'react-markdown'
+import { Message } from '@prisma/client'
 
 type ChatMessageProps = {
-    message: {
-        role: 'user' | 'assistant' | 'system' | 'data'
-        content: string
-    }
+    message: Message
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {

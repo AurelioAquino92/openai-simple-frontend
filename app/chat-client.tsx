@@ -9,8 +9,8 @@ import { ThinkingAnimation } from "@/components/thinking-animation"
 import { useEffect, useRef, useState } from 'react'
 import { UserButton, useUser } from "@clerk/nextjs"
 import { ChatMessage } from "@/components/chat-message"
-import { Prisma } from "@prisma/client"
-import { createAssistantMessage, createUserMessage, getUserChats } from "./actions"
+import { Message, Prisma } from "@prisma/client"
+import { createAssistantMessage, createUserMessage, getUserChats, getChatMessages } from "./actions"
 
 type ChatClientProps = {
   initialChats: Prisma.ChatGetPayload<{
@@ -24,8 +24,9 @@ export function ChatClient({ initialChats }: ChatClientProps) {
   const { user } = useUser()
   const [chatId, setChatId] = useState<number | null>(null)
   const [chats, setChats] = useState(initialChats)
+  const [messages, setMessages] = useState<Message[]>([])
   
-  const { messages, input, handleSubmit, handleInputChange, status } = useChat({
+  const { input, handleSubmit, handleInputChange, status } = useChat({
     api: `${process.env.NEXT_PUBLIC_API_URL}/ask`,
     streamProtocol: 'text',
     onFinish: async (message) => {
@@ -36,8 +37,17 @@ export function ChatClient({ initialChats }: ChatClientProps) {
       
       const updatedChats = await getUserChats(user.id);
       setChats(updatedChats);
+      
+      const updatedMessages = await getChatMessages(newChatId);
+      setMessages(updatedMessages);
     },
   });
+
+  const handleChatSelect = async (selectedChatId: number) => {
+    setChatId(selectedChatId);
+    const messages = await getChatMessages(selectedChatId);
+    setMessages(messages);
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -53,13 +63,13 @@ export function ChatClient({ initialChats }: ChatClientProps) {
     <div className="flex h-screen w-full">
       <div className="flex flex-col items-center text-center p-4 gap-2 w-64 border-r">
         <UserButton />
-        <span className="text-sm">Hello<br />{user?.firstName}!</span>
+        <span className="text-sm"><strong>Hello {user?.firstName}! 👋</strong><br />Your conversation history is shown below</span>
         <div className="mt-5 flex flex-col gap-2 items-center w-full overflow-y-auto max-h-[calc(100vh-200px)]">
           {chats.map((chat) => (
             <Button
               key={chat.id}
               className="border border-stone-200 w-full overflow-hidden p-1 rounded-lg"
-              onClick={() => setChatId(chat.id)}
+              onClick={() => handleChatSelect(chat.id)}
               variant={chat.id === chatId ? "secondary" : "outline"}
             >
               <span className="truncate">{chat.messages[0].content}</span>

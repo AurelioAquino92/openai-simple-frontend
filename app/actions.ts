@@ -53,3 +53,19 @@ export async function getUserChats(userId: string) {
   })
   return chats
 }
+
+export async function getChatMessages(chatId: number) {
+  const chat = await prisma.chat.findUnique({
+    where: {
+      id: chatId
+    },
+    include: {
+      messages: {
+        orderBy: {
+          createdAt: 'asc'
+        }
+      }
+    }
+  })
+  return chat?.messages || []
+}
