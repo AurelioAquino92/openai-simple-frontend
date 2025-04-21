@@ -6,20 +6,32 @@ import { Input } from "@/components/ui/input"
 import { ArrowUpIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThinkingAnimation } from "@/components/thinking-animation"
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { UserButton, useUser } from "@clerk/nextjs"
 import { ChatMessage } from "@/components/chat-message"
-import { Chat } from "@prisma/client"
+import { Prisma } from "@prisma/client"
+import { createAssistantMessage, createUserMessage } from "./actions"
 
 type ChatClientProps = {
-  chats: Chat[]
+  chats: Prisma.ChatGetPayload<{
+    include: {
+      messages: true
+    }
+  }>[]
 }
 
 export function ChatClient({ chats }: ChatClientProps) {
   const { user } = useUser()
+  const [chatId, setChatId] = useState<number | null>(null)
   const { messages, input, handleSubmit, handleInputChange, status } = useChat({
     api: `${process.env.NEXT_PUBLIC_API_URL}/ask`,
     streamProtocol: 'text',
+    onFinish: async (message) => {
+      if (!user) return;
+      const newChatId = await createUserMessage(input, user.id, chatId);
+      await createAssistantMessage(message.content, newChatId)
+      setChatId(newChatId);
+    },
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -37,11 +49,16 @@ export function ChatClient({ chats }: ChatClientProps) {
       <div className="flex flex-col items-center text-center p-4 gap-2">
         <UserButton />
         <span className="text-sm">Hello<br />{user?.firstName}!</span>
-        <div>
+        <div className="mt-5 flex flex-col gap-2 items-center">
           {chats.map((chat) => (
-            <div key={chat.id}>
-              <span>{chat.id}</span>
-            </div>
+            <Button
+              key={chat.id}
+              className="border border-stone-200 w-full overflow-hidden p-1 rounded-lg"
+              onClick={() => setChatId(chat.id)}
+              variant={chat.id === chatId ? "secondary" : "outline"}
+            >
+              <span>{chat.messages[0].content}</span>
+            </Button>
           ))}
         </div>
       </div>
