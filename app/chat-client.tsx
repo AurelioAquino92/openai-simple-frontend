@@ -9,7 +9,7 @@ import { ThinkingAnimation } from "@/components/thinking-animation"
 import { useEffect, useRef, useState } from 'react'
 import { UserButton, useUser } from "@clerk/nextjs"
 import { ChatMessage } from "@/components/chat-message"
-import { Message, Prisma } from "@prisma/client"
+import { Prisma } from "@prisma/client"
 import { createAssistantMessage, createUserMessage, getUserChats, getChatMessages } from "./actions"
 
 type ChatClientProps = {
@@ -24,22 +24,19 @@ export function ChatClient({ initialChats }: ChatClientProps) {
   const { user } = useUser()
   const [chatId, setChatId] = useState<number | null>(null)
   const [chats, setChats] = useState(initialChats)
-  const [messages, setMessages] = useState<Message[]>([])
-
-  const { input, handleSubmit, handleInputChange, status } = useChat({
+  
+  const { messages, setMessages, input, handleSubmit, handleInputChange, status } = useChat({
     api: `${process.env.NEXT_PUBLIC_API_URL}/ask`,
     streamProtocol: 'text',
     onFinish: async (message) => {
       if (!user) return;
+      
       const newChatId = await createUserMessage(input, user.id, chatId);
       await createAssistantMessage(message.content, newChatId)
       setChatId(newChatId);
-
+      
       const updatedChats = await getUserChats(user.id);
       setChats(updatedChats);
-
-      const updatedMessages = await getChatMessages(newChatId);
-      setMessages(updatedMessages);
     },
   });
 
@@ -47,7 +44,11 @@ export function ChatClient({ initialChats }: ChatClientProps) {
     setMessages([]);
     setChatId(selectedChatId);
     const messages = await getChatMessages(selectedChatId);
-    setMessages(messages);
+    setMessages(messages.map(msg => ({
+      id: msg.id.toString(),
+      role: msg.role as 'user' | 'assistant',
+      content: msg.content
+    })));
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -83,9 +84,7 @@ export function ChatClient({ initialChats }: ChatClientProps) {
               className={`flex overflow-hidden p-2 rounded-lg cursor-pointer select-none hover:bg-stone-100 ${chat.id === chatId ? "bg-stone-200" : ""}`}
               onClick={() => handleChatSelect(chat.id)}
             >
-              <span
-                className="truncate"
-              >
+              <span className="truncate">
                 {chat.messages[0].content}
               </span>
             </div>
