@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ArrowUpIcon } from "lucide-react"
+import { ArrowUpIcon, PlusIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ThinkingAnimation } from "@/components/thinking-animation"
 import { useEffect, useRef, useState } from 'react'
@@ -64,7 +64,18 @@ export function ChatClient({ initialChats }: ChatClientProps) {
       <div className="flex flex-col items-center text-center p-4 gap-2 w-64 border-r">
         <UserButton />
         <span className="text-sm"><strong>Hello {user?.firstName}! 👋</strong><br />Your conversation history is shown below</span>
-        <div className="mt-5 flex flex-col gap-2 items-center w-full overflow-y-auto max-h-[calc(100vh-200px)]">
+        <Button
+          className="w-full mt-4"
+          variant="outline"
+          onClick={() => {
+            setChatId(null);
+            setMessages([]);
+          }}
+        >
+          <PlusIcon className="w-4 h-4" />
+          New Chat
+        </Button>
+        <div className="mt-5 flex flex-col gap-2 items-center w-full overflow-y-auto max-h-[calc(100vh-300px)]">
           {chats.map((chat) => (
             <Button
               key={chat.id}
