@@ -38,3 +38,18 @@ export async function createAssistantMessage(content: string, chatId: number) {
     }
   })
 }
+
+export async function getUserChats(userId: string) {
+  const chats = await prisma.chat.findMany({
+    where: {
+      userId: userId
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    include: {
+      messages: true
+    }
+  })
+  return chats
+}

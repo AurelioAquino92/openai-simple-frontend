@@ -10,19 +10,21 @@ import { useEffect, useRef, useState } from 'react'
 import { UserButton, useUser } from "@clerk/nextjs"
 import { ChatMessage } from "@/components/chat-message"
 import { Prisma } from "@prisma/client"
-import { createAssistantMessage, createUserMessage } from "./actions"
+import { createAssistantMessage, createUserMessage, getUserChats } from "./actions"
 
 type ChatClientProps = {
-  chats: Prisma.ChatGetPayload<{
+  initialChats: Prisma.ChatGetPayload<{
     include: {
       messages: true
     }
   }>[]
 }
 
-export function ChatClient({ chats }: ChatClientProps) {
+export function ChatClient({ initialChats }: ChatClientProps) {
   const { user } = useUser()
   const [chatId, setChatId] = useState<number | null>(null)
+  const [chats, setChats] = useState(initialChats)
+  
   const { messages, input, handleSubmit, handleInputChange, status } = useChat({
     api: `${process.env.NEXT_PUBLIC_API_URL}/ask`,
     streamProtocol: 'text',
@@ -31,6 +33,9 @@ export function ChatClient({ chats }: ChatClientProps) {
       const newChatId = await createUserMessage(input, user.id, chatId);
       await createAssistantMessage(message.content, newChatId)
       setChatId(newChatId);
+      
+      const updatedChats = await getUserChats(user.id);
+      setChats(updatedChats);
     },
   });
 
@@ -46,10 +51,10 @@ export function ChatClient({ chats }: ChatClientProps) {
 
   return (
     <div className="flex h-screen w-full">
-      <div className="flex flex-col items-center text-center p-4 gap-2">
+      <div className="flex flex-col items-center text-center p-4 gap-2 w-64 border-r">
         <UserButton />
         <span className="text-sm">Hello<br />{user?.firstName}!</span>
-        <div className="mt-5 flex flex-col gap-2 items-center">
+        <div className="mt-5 flex flex-col gap-2 items-center w-full overflow-y-auto max-h-[calc(100vh-200px)]">
           {chats.map((chat) => (
             <Button
               key={chat.id}
@@ -57,7 +62,7 @@ export function ChatClient({ chats }: ChatClientProps) {
               onClick={() => setChatId(chat.id)}
               variant={chat.id === chatId ? "secondary" : "outline"}
             >
-              <span>{chat.messages[0].content}</span>
+              <span className="truncate">{chat.messages[0].content}</span>
             </Button>
           ))}
         </div>
